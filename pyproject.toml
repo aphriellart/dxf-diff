@@ -1,0 +1,41 @@
+[build-system]
+requires = ["hatchling>=1.18"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dxf-diff"
+dynamic = ["version"]
+description = "Visual diff for AutoCAD DXF/DWG drawings - see what changed between two CAD revisions."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+authors = [{ name = "dxf-diff contributors" }]
+keywords = ["dxf", "dwg", "autocad", "cad", "diff", "compare", "revision", "ezdxf"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Manufacturing",
+  "Intended Audience :: Developers",
+  "Topic :: Scientific/Engineering :: Visualization",
+  "Topic :: Multimedia :: Graphics :: Graphics Conversion",
+  "Programming Language :: Python :: 3",
+]
+dependencies = ["ezdxf>=1.1", "matplotlib>=3.5"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "ruff"]
+
+[project.scripts]
+dxf-diff = "dxfdiff.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/OWNER/dxf-diff"
+Issues = "https://github.com/OWNER/dxf-diff/issues"
+
+[tool.hatch.version]
+path = "src/dxfdiff/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dxfdiff"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

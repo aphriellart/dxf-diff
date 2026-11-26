@@ -1,0 +1,69 @@
+name: "dxf-diff"
+description: "Visual diff of changed DXF drawings in a pull request, posted as a comment."
+branding:
+  icon: "layers"
+  color: "orange"
+inputs:
+  github-token:
+    description: "Token used to post the PR comment"
+    default: ${{ github.token }}
+  precision:
+    description: "Decimal places used when comparing coordinates"
+    default: "4"
+  comment:
+    description: "Post a PR comment (true/false)"
+    default: "true"
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - name: Install dxf-diff
+      shell: bash
+      run: pip install "${{ github.action_path }}"
+    - name: Diff changed drawings
+      shell: bash
+      env:
+        BASE: ${{ github.event.pull_request.base.sha }}
+        HEAD: ${{ github.event.pull_request.head.sha }}
+        PRECISION: ${{ inputs.precision }}
+      run: |
+        mkdir -p dxf-diff-out
+        echo "## CAD drawing changes" > dxf-diff-out/comment.md
+        found=0
+        while IFS= read -r f; do
+          [ -z "$f" ] && continue
+          found=1
+          safe=$(echo "$f" | tr '/ ' '__')
+          if git cat-file -e "$BASE:$f" 2>/dev/null; then
+            git show "$BASE:$f" > "dxf-diff-out/$safe.old.dxf"
+          else
+            python -c "import ezdxf; ezdxf.new().saveas('dxf-diff-out/$safe.old.dxf')"
+          fi
+          if git cat-file -e "$HEAD:$f" 2>/dev/null; then
+            git show "$HEAD:$f" > "dxf-diff-out/$safe.new.dxf"
+          else
+            python -c "import ezdxf; ezdxf.new().saveas('dxf-diff-out/$safe.new.dxf')"
+          fi
+          dxf-diff "dxf-diff-out/$safe.old.dxf" "dxf-diff-out/$safe.new.dxf" \
+            --precision "$PRECISION" --exit-zero -q \
+            -o "dxf-diff-out/$safe.png" --html "dxf-diff-out/$safe.html" \
+            --markdown "dxf-diff-out/$safe.md"
+          sed "s|### CAD drawing diff|### \`$f\`|" "dxf-diff-out/$safe.md" >> dxf-diff-out/comment.md
+          echo "" >> dxf-diff-out/comment.md
+        done < <(git diff --name-only "$BASE" "$HEAD" -- '*.dxf' '*.DXF')
+        if [ "$found" = 0 ]; then echo "No DXF files changed." >> dxf-diff-out/comment.md; fi
+        echo "_Overlay images and HTML reports are in the **dxf-diff** workflow artifact._" >> dxf-diff-out/comment.md
+        cat dxf-diff-out/comment.md >> "$GITHUB_STEP_SUMMARY"
+    - uses: actions/upload-artifact@v4
+      with:
+        name: dxf-diff
+        path: dxf-diff-out/
+    - name: Comment on PR
+      if: inputs.comment == 'true' && github.event.pull_request
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        PR: ${{ github.event.pull_request.number }}
+      run: gh pr comment "$PR" --body-file dxf-diff-out/comment.md --edit-last || gh pr comment "$PR" --body-file dxf-diff-out/comment.md
