@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "Visual diff for AutoCAD DXF/DWG drawings - see what changed between two CAD revisions."
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [{ name = "dxf-diff contributors" }]
 keywords = ["dxf", "dwg", "autocad", "cad", "diff", "compare", "revision", "ezdxf"]
 classifiers = [
