@@ -87,7 +87,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
-      - uses: OWNER/dxf-diff@v0
+      - uses: Aphriellart/dxf-diff@v0
 ```
 
 For every changed `.dxf` file, the action compares the base and head versions, uploads the overlay images as an artifact, and posts a summary comment on the PR.
